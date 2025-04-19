@@ -1,0 +1,64 @@
+name: imperium
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d
+
+  kratos:
+    image: oryd/kratos:latest
+    container_name: ory-kratos
+    environment:
+      - DSN=postgres://${KRATOS_POSTGRES_USER}:${KRATOS_POSTGRES_PASSWORD}@postgres:5432/${KRATOS_POSTGRES_DB}?sslmode=disable
+      - LOG_LEVEL=debug
+    ports:
+      - "4433:4433"
+      - "4434:4434"
+    depends_on:
+      - postgres
+
+  hydra:
+    image: oryd/hydra:latest
+    container_name: ory-hydra
+    environment:
+      - DSN=postgres://${HYDRA_POSTGRES_USER}:${HYDRA_POSTGRES_PASSWORD}@postgres:5432/${HYDRA_POSTGRES_DB}?sslmode=disable
+      - URLS_SELF_ISSUER=https://${HYDRA_HOST}/
+      - URLS_CONSENT=https://${HYDRA_HOST}/consent
+      - URLS_LOGIN=https://${HYDRA_HOST}/login
+    ports:
+      - "4444:4444"
+      - "4445:4445"
+    depends_on:
+      - postgres
+
+  keto:
+    image: oryd/keto:latest
+    container_name: ory-keto
+    environment:
+      - DSN=postgres://${KETO_POSTGRES_USER}:${KETO_POSTGRES_PASSWORD}@postgres:5432/${KETO_POSTGRES_DB}?sslmode=disable
+    ports:
+      - "4466:4466"
+    depends_on:
+      - postgres
+
+  oathkeeper:
+    image: oryd/oathkeeper:latest
+    container_name: ory-oathkeeper
+    environment:
+      - CONFIG=/etc/oathkeeper/oathkeeper.yml
+    ports:
+      - "4455:4455"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:
