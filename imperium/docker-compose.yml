@@ -25,6 +25,9 @@ services:
     image: oryd/kratos:latest
     container_name: ory-kratos
     environment:
+      - KRATOS_POSTGRES_USER=${KRATOS_POSTGRES_USER}
+      - KRATOS_POSTGRES_PASSWORD=${KRATOS_POSTGRES_PASSWORD}
+      - KRATOS_POSTGRES_DB=${KRATOS_POSTGRES_DB}
       - DSN=postgres://${KRATOS_POSTGRES_USER}:${KRATOS_POSTGRES_PASSWORD}@postgres:5432/${KRATOS_POSTGRES_DB}?sslmode=disable
       - LOG_LEVEL=debug
     ports:
@@ -37,6 +40,10 @@ services:
     image: oryd/hydra:latest
     container_name: ory-hydra
     environment:
+      - HYDRA_POSTGRES_USER=${HYDRA_POSTGRES_USER}
+      - HYDRA_POSTGRES_PASSWORD=${HYDRA_POSTGRES_PASSWORD}
+      - HYDRA_POSTGRES_DB=${HYDRA_POSTGRES_DB}
+      - HYDRA_HOST=${HYDRA_HOST}
       - DSN=postgres://${HYDRA_POSTGRES_USER}:${HYDRA_POSTGRES_PASSWORD}@postgres:5432/${HYDRA_POSTGRES_DB}?sslmode=disable
       - URLS_SELF_ISSUER=https://${HYDRA_HOST}/
       - URLS_CONSENT=https://${HYDRA_HOST}/consent
@@ -51,6 +58,9 @@ services:
     image: oryd/keto:latest
     container_name: ory-keto
     environment:
+      - KETO_POSTGRES_USER=${KETO_POSTGRES_USER}
+      - KETO_POSTGRES_PASSWORD=${KETO_POSTGRES_PASSWORD}
+      - KETO_POSTGRES_DB=${KETO_POSTGRES_DB}
       - DSN=postgres://${KETO_POSTGRES_USER}:${KETO_POSTGRES_PASSWORD}@postgres:5432/${KETO_POSTGRES_DB}?sslmode=disable
     ports:
       - "4466:4466"
