@@ -11,9 +11,12 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
-    post_start:
-      - command: chown -R postgres:postgres /docker-entrypoint-initdb.d && chmod -R 755 /docker-entrypoint-initdb.d
-        user: root
+#    post_start:
+#      - command: >
+#          chown -R postgres:postgres /docker-entrypoint-initdb.d
+#          && chmod -R 655 /docker-entrypoint-initdb.d
+#          && chmod 755 `ls /docker-entrypoint-initdb.d/*.sh`
+#        user: root
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
