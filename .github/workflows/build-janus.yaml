@@ -10,6 +10,7 @@ on:
     branches: [ main ]
     paths:
       - 'imperium/janus/**'
+      - '.github/workflows/build-janus.yaml'
 
 jobs:
   # Sadly, to protect the Docker credentials, this all needs to be accomplished in a single job.
