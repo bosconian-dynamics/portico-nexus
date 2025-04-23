@@ -1,5 +1,9 @@
 name: Build and Push Janus Image
 
+permissions:
+  id-token: write
+  contents: read
+
 # Trigger this workflow on pushes to main that affect files in imperium/janus
 on:
   push:
