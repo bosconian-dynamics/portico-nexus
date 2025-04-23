@@ -1,0 +1,79 @@
+name: Build and Push Janus Image
+
+# Trigger this workflow on pushes to main that affect files in imperium/janus
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'imperium/janus/**'
+
+jobs:
+  # Sadly, to protect the Docker credentials, this all needs to be accomplished in a single job.
+  # We could dynamically switch based on ${{ runner.debug }}, or encrypt, upload, download, and
+  # decrypt the credentials - something to maybe explore in the future.
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Parse the package.json file to get the version number
+      - name: Parse Package
+        id: parse-package
+        run: |
+          echo "VERSION=$(jq -r .version ./imperium/janus/package.json)" >> $GITHUB_ENV
+          echo "VERSION=${VERSION}"
+
+      # Configure AWS credentials for uploading to ECR
+      # @see https://github.com/aws-actions/configure-aws-credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: us-west-2
+          role-to-assume: ${{ secrets.AWS_IAM_OIDC_ROLE_ARN }}
+          role-session-name: PorticoNexus-Workflow-BuildJanus
+
+      # Log in to Amazon ECR
+      # @see https://github.com/aws-actions/amazon-ecr-login
+      - name: Login to PorticoNexus ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: private
+
+      # Set up Docker Buildx (improves build performance and enables caching)
+      # @see https://github.com/docker/setup-buildx-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      # Set up Docker image metadata
+      # @see https://github.com/docker/metadata-action
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            portico-nexus/imperium/janus
+          tags: |
+            type=semver,pattern=v{{major}},value={{VERSION}}
+            type=sha
+#          tags: |
+#            type=semver,pattern={{version}},value=1.0.0
+#        env:
+#          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+
+      # Build and push the Docker image. The build context points to the subdirectory.
+      # @see https://github.com/docker/metadata-action
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          build-args: |
+            PNPM_CACHE_TYPE=gha
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          context: imperium/janus
+          file: imperium/janus/Dockerfile
+          labels: ${{ steps.meta.outputs.labels }}
+#          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
