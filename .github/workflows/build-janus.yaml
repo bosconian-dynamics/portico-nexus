@@ -26,8 +26,11 @@ jobs:
       - name: Parse Package
         id: parse-package
         run: |
-          echo "VERSION=$(jq -r .version ./imperium/janus/package.json)" >> $GITHUB_ENV
-          echo "VERSION=${VERSION}"
+          # Capture the version into a local variable
+          VERSION=$(jq -r .version imperium/janus/package.json)
+          echo "Parsed version: ${VERSION}"
+          # Write it to the GitHub Actions environment file for future steps
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       # Configure AWS credentials for uploading to ECR
       # @see https://github.com/aws-actions/configure-aws-credentials
@@ -57,9 +60,11 @@ jobs:
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          version: ${{ env.VERSION }}
         with:
           images: |
-            portico-nexus/imperium/janus
+            ${{ steps.ecr-login.outputs.registry }}/portico-nexus/imperium/janus
           tags: |
             type=semver,pattern=v{{major}},value={{VERSION}}
             type=sha
@@ -79,4 +84,5 @@ jobs:
           file: imperium/janus/Dockerfile
           labels: ${{ steps.meta.outputs.labels }}
 #          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
