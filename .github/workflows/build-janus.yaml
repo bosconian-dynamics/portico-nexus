@@ -73,8 +73,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          build-args: |
-            PNPM_CACHE_TYPE=gha
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: imperium/janus
